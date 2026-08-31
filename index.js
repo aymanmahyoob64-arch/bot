@@ -138,4 +138,25 @@ bot.onText(/\/song (.+)/, (msg, match) => {
 bot.onText(/\/video (.+)/, (msg, match) => {
   let query = encodeURIComponent(match[1]);
   bot.sendMessage(msg.chat.id, `🎬 فيديو: ${match[1]}\nhttps://www.youtube.com/results?search_query=${query}`);
+});// --- ردود تلقائية ---
+const autoReplies = {
+  'السلام عليكم': 'وعليكم السلام ورحمة الله وبركاته ❤️',
+  'هلا': 'هلا والله نورت 😍',
+  'كيفك': 'الحمدلله بخير، انت كيفك؟ ❤️',
+  'بوت': 'نعم؟ تأمرني؟ 🤖',
+  'بحبك': 'وأنا كمان بحبك أكثر 😘',
+  'تصبحون على خير': 'وانت من أهل الخير 🌙',
+  'صباح الخير': 'صباح النور والسرور ☀️',
+  'وينك': 'موجود معكم 🫡'
+};
+
+bot.on('message', (msg) => {
+  if(!msg.text) return;
+  let text = msg.text.toLowerCase().trim();
+  for(let key in autoReplies){
+    if(text.includes(key.toLowerCase())){
+      bot.sendMessage(msg.chat.id, autoReplies[key], {reply_to_message_id: msg.message_id});
+      break;
+    }
+  }
 });
