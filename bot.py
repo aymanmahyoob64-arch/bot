@@ -17,7 +17,9 @@ DATA_FILE = "data.json"
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f: json.dump({}, f)
 def load_data():
-    with open(DATA_FILE, "r") as f: return json.load(f)
+    try:
+        with open(DATA_FILE, "r") as f: return json.load(f)
+    except: return {}
 def save_data(d):
     with open(DATA_FILE, "w") as f: json.dump(d, f)
 
@@ -37,27 +39,21 @@ def add_watermark(photo_bytes, text="Kenan♛"):
     bio.seek(0)
     return bio
 
-# عد الرسائل
-@bot.message_handler(func=lambda m: True)
-def counter(m):
-    if m.chat.type not in ['group','supergroup']: return
-    data=load_data()
-    c=str(m.chat.id); u=str(m.from_user.id)
-    data.setdefault(c, {}).setdefault("msgs", {}).setdefault(u, 0)
-    if c in data and "msgs" in data[c]:
-        data[c]["msgs"][u] = data[c]["msgs"].get(u,0)+1
-        save_data(data)
-
+# 1- امر التفعيل اول شي
 @bot.message_handler(func=lambda m: m.text and m.text.strip() in ["تفعيل","تفعيل الايدي"])
 def activate(m):
-    data=load_data(); data[str(m.chat.id)]={"active":True, "msgs": data.get(str(m.chat.id),{}).get("msgs",{})}
+    data=load_data()
+    chat=str(m.chat.id)
+    if chat not in data: data[chat]={}
+    data[chat]["active"]=True
+    if "msgs" not in data[chat]: data[chat]["msgs"]={}
     save_data(data)
     bot.reply_to(m, "✅ تم تفعيل المجموعة احبك.")
 
-# --- امر الاوامر مثل SOMA بالضبط ---
-@bot.message_handler(func=lambda m: m.text and m.text.strip() in ["الاوامر","اوامر","الاوامر 🕹"])
+# 2- امر الاوامر
+@bot.message_handler(func=lambda m: m.text and m.text.strip() in ["الاوامر","اوامر","ا الاوامر"])
 def awamer(m):
-    text = f"""- أهلاً بك عزيزي في قائمة الاوامر :
+    text = """- أهلاً بك عزيزي في قائمة الاوامر :
 ——————————————
 ◂ م1 : اوامر الادمنيه
 ◂ م2 : اوامر الاعدادات
@@ -66,7 +62,6 @@ def awamer(m):
 ◂ م5 : اوامر Dev
 ◂ م6 : الاوامر الخدميه
 ——————————————"""
-
     markup = InlineKeyboardMarkup(row_width=3)
     markup.add(
         InlineKeyboardButton("❶", callback_data="m1"),
@@ -77,37 +72,50 @@ def awamer(m):
         InlineKeyboardButton("اوامر Dev", callback_data="m5"),
         InlineKeyboardButton("اوامر التسليه", callback_data="m4")
     )
-    markup.add(
-        InlineKeyboardButton("اوامر خدميه", callback_data="m6")
-    )
+    markup.add(InlineKeyboardButton("اوامر خدميه", callback_data="m6"))
     markup.add(
         InlineKeyboardButton("القفل والفتح", callback_data="m3"),
-        InlineKeyboardButton("التفعيل والتعطيل", callback_data="m2")
+        InlineKeyboardButton("التفعيل والتعطيل", callback_data="show_himaya")
     )
+    bot.send_message(m.chat.id, text, reply_markup=markup)
 
-    bot.send_message(m.chat.id, text, reply_markup=markup, reply_to_message_id=m.message_id)
+# 3- امر الحمايه الي بالصورة مالك
+@bot.message_handler(func=lambda m: m.text and "الحمايه" in m.text)
+def himaya(m):
+    text = "• اوامر التفعيل والتعطيل"
+    markup = InlineKeyboardMarkup(row_width=2)
+    markup.add(InlineKeyboardButton("تعطيل الرابط", callback_data="x"), InlineKeyboardButton("تفعيل الرابط", callback_data="x"))
+    markup.add(InlineKeyboardButton("تعطيل الترحيب", callback_data="x"), InlineKeyboardButton("تفعيل الترحيب", callback_data="x"))
+    markup.add(InlineKeyboardButton("تعطيل الايدي", callback_data="x"), InlineKeyboardButton("تفعيل الايدي", callback_data="x"))
+    markup.add(InlineKeyboardButton("تعطيل الردود", callback_data="x"), InlineKeyboardButton("تفعيل الردود", callback_data="x"))
+    markup.add(InlineKeyboardButton("تعطيل الردود العامه", callback_data="x"), InlineKeyboardButton("تفعيل الردود العامه", callback_data="x"))
+    markup.add(InlineKeyboardButton("تعطيل الرفع", callback_data="x"), InlineKeyboardButton("تفعيل الرفع", callback_data="x"))
+    markup.add(InlineKeyboardButton("تعطيل الطرد", callback_data="x"), InlineKeyboardButton("تفعيل الطرد", callback_data="x"))
+    markup.add(InlineKeyboardButton("تعطيل الالعاب", callback_data="x"), InlineKeyboardButton("تفعيل الالعاب", callback_data="x"))
+    markup.add(InlineKeyboardButton("اخفاء الامر", callback_data="hide"))
+    bot.send_message(m.chat.id, text, reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callbacks(call):
-    if call.data == "m1":
-        bot.answer_callback_query(call.id, "اوامر الادمنيه: رفع ادمن - تنزيل ادمن - حظر - كتم")
-    elif call.data == "m2":
-        bot.answer_callback_query(call.id, "اوامر الاعدادات")
-    elif call.data == "m3":
-        bot.answer_callback_query(call.id, "اوامر القفل والفتح")
-    elif call.data == "m4":
-        bot.answer_callback_query(call.id, "اوامر التسليه: كت - تويت - زخرفه")
-    elif call.data == "m5":
-        bot.answer_callback_query(call.id, "اوامر المطور")
-    elif call.data == "m6":
-        txt = """الاوامر الخدميه:
-- ايدي - ا : لعرض صورتك
-- رسائلي : عدد رسائلك
-- جهاتي : جهاتك
-- بايو : بايوك"""
-        bot.send_message(call.message.chat.id, txt)
+    if call.data == "show_himaya":
+        # نستدعي نفس قائمة الحمايه
+        text = "• اوامر التفعيل والتعطيل"
+        markup = InlineKeyboardMarkup(row_width=2)
+        markup.add(InlineKeyboardButton("تعطيل الرابط", callback_data="x"), InlineKeyboardButton("تفعيل الرابط", callback_data="x"))
+        markup.add(InlineKeyboardButton("تعطيل الترحيب", callback_data="x"), InlineKeyboardButton("تفعيل الترحيب", callback_data="x"))
+        markup.add(InlineKeyboardButton("تعطيل الايدي", callback_data="x"), InlineKeyboardButton("تفعيل الايدي", callback_data="x"))
+        markup.add(InlineKeyboardButton("تعطيل الردود", callback_data="x"), InlineKeyboardButton("تفعيل الردود", callback_data="x"))
+        markup.add(InlineKeyboardButton("تعطيل الردود العامه", callback_data="x"), InlineKeyboardButton("تفعيل الردود العامه", callback_data="x"))
+        markup.add(InlineKeyboardButton("تعطيل الرفع", callback_data="x"), InlineKeyboardButton("تفعيل الرفع", callback_data="x"))
+        markup.add(InlineKeyboardButton("تعطيل الطرد", callback_data="x"), InlineKeyboardButton("تفعيل الطرد", callback_data="x"))
+        markup.add(InlineKeyboardButton("تعطيل الالعاب", callback_data="x"), InlineKeyboardButton("تفعيل الالعاب", callback_data="x"))
+        bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=markup)
+    elif call.data == "hide":
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+    else:
+        bot.answer_callback_query(call.id, "تم ✅")
 
-# --- امر الايدي مع العلامة الشفافة ---
+# 4- امر الايدي
 @bot.message_handler(func=lambda m: m.text and m.text.strip() in ["ا","ايدي","id"])
 def my_id(m):
     data=load_data()
@@ -119,21 +127,33 @@ def my_id(m):
         elif s=="administrator": rank="ادمن"
     except: pass
     username = f"@{m.from_user.username}" if m.from_user.username else "لايوجد"
-    owner_name = "Kenan♛" # غيره لاسم المالك الي يظهر على الصورة شفاف
+    owner_name = "Kenan♛"
     caption = f"جبر لقلبي قبل قلوبهم 💛.\n\n- NAME : {m.from_user.first_name} ♛ 𓅓.\n- UsEr : {username} 𓅓.\n- MsG : {count} متوسط 𓅓.\n- StA : {rank} 𓅓.\n- ID : {m.from_user.id} 𓅓.\n- TITLE المالك 𓅓.\n- BIO I don't need to impress you. 𓆩 𓅓."
-
     try:
         photos=bot.get_user_profile_photos(m.from_user.id, limit=1)
         if photos.total_count>0:
             f_id=photos.photos[0][0].file_id
-            f_info=bot.get_file(f_id)
-            down=bot.download_file(f_info.file_path)
+            down=bot.download_file(bot.get_file(f_id).file_path)
             wm=add_watermark(down, owner_name)
             bot.send_photo(m.chat.id, wm, caption=caption, reply_to_message_id=m.message_id)
         else:
             bot.reply_to(m, caption)
-    except:
+    except Exception as e:
+        print(e)
         bot.reply_to(m, caption)
+
+# 5- عداد الرسائل يكون اخر واحد حتى ما يخرب الاوامر
+@bot.message_handler(func=lambda m: True, content_types=['text'])
+def counter(m):
+    if m.chat.type not in ['group','supergroup']: return
+    # لا تحسب اوامر
+    if m.text and m.text.startswith(("ا ","تفعيل","الاوامر","الحمايه")): return
+    data=load_data()
+    c=str(m.chat.id); u=str(m.from_user.id)
+    if c not in data: data[c]={"msgs":{}}
+    if "msgs" not in data[c]: data[c]["msgs"]={}
+    data[c]["msgs"][u]=data[c]["msgs"].get(u,0)+1
+    save_data(data)
 
 print("Bot is running...")
 bot.infinity_polling()
