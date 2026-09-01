@@ -11,12 +11,12 @@ app = Client("music24", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 @app.on_message(filters.command(["play","شغل"]) & filters.group)
 async def play(c, m):
     if len(m.command) < 2:
-        return await m.reply("🎵 اكتب اسم الاغنية\nمثال: `/play دجلة وفرات`")
+        return await m.reply("🎵 اكتب اسم الاغنية\nمثال: /play دجلة وفرات")
 
     song = " ".join(m.command[1:])
     status = await m.reply(f"🎧 **جاري تشغيل اغنية...**\n`{song}`")
 
-    ydl_opts = {'format': 'bestaudio[ext=m4a]', 'outtmpl': '%(title)s.%(ext)s', 'quiet': True}
+    ydl_opts = {'format': 'bestaudio[ext=m4a]', 'outtmpl': '%(title)s.%(ext)s', 'quiet': True, 'no_warnings': True}
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"ytsearch1:{song}", download=True)
@@ -31,6 +31,6 @@ async def play(c, m):
 
 @app.on_message(filters.command("start"))
 async def start(c,m):
-    await m.reply("بوت اغاني 24/7 شغال ✅\nاكتب /play اسم الاغنية بالكروب")
+    await m.reply("بوت اغاني 24/7 شغال ✅\nبالكروب اكتب /play اسم الاغنية")
 
 app.run()
