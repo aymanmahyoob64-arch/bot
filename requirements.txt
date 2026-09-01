@@ -2,3 +2,6 @@ pyTelegramBotAPI
 Flask
 Pillow
 requests
+pyrogram
+tgcrypto
+yt-dlp
